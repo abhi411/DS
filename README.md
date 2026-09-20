@@ -1,92 +1,83 @@
-# Customer Churn Prediction (IBM Telco)
+# Customer Churn Predictin (IBM Telco)
 
-An end-to-end machine-learning project: a **Decision Tree** that flags telecom customers likely to churn, wrapped in a **Flask REST API** so the retention team can score customers on demand.
+This is a proJect I made to predict if telecom customers are gonna leave (churn). I used a **Decision Tree** model and put it inside a **Flask API** so it's easy to use.
 
-**Workflow:** Business problem → Data → Preparation → EDA → Feature engineering → Model → Evaluation → Interpretation → Saved model → API
+**What I did:** Basically looked at the data, did some cleaning, picked a modle, and made sure it works with a simple web server.
 
-## Results at a glance
+## Quick results
 
-Final model: Decision Tree (`gini`, `max_depth=5`, `min_samples_leaf=100`, `class_weight="balanced"`, 24 leaves), evaluated once on a held-out 30% test set (2,113 customers, 561 churners).
+I used a Decision Tree (depth of 5). Tested it on 2,113 customers it haven't seen before.
 
 | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---|---|---|---|
 | 0.711 | 0.474 | 0.822 | 0.601 | 0.832 |
 
-- **Recall is the priority.** Missing a churner (lost customer) costs far more than a false alarm (an unneeded retention offer). The model catches **82% of churners** by contacting 46% of customers (1.8× lift over random).
-- Accuracy is deliberately *not* the headline: always predicting "No" already scores 73.5%.
-- Main drivers: contract type (month-to-month), tenure (first year), fiber-optic internet, higher monthly charges, no online-security / tech-support add-ons.
+- **I cared most about Recall.** It's better to catch most of teh people who might leave, even if we're wrong sometimes. This model catches **82% of churners**.
+- Accuracy isn't everything here because most people stay anyway (73%).
+- People usually leave if they have a month-to-month contract, are new, or have fiber-optic internet without extra security.
 
-The full reasoning (decisions, charts, business interpretation, limitations) is in the notebook.
+The full details and charts are in the notebook if you wanna see them.
 
-## Project structure
+## File stuff
 
 ```
 customer_churn_project/
-├── data/
-│   ├── TelcoCustomerChurn.csv
-│   └── TelcoCustomerChurn_-_Data_Dictionary.csv
+├── data/                         # the csv files
 ├── notebook/
-│   └── churn_analysis.ipynb      # complete analysis and modelling (outputs included)
+│   └── churn_analysis.ipynb      # where I did all the work
 ├── src/
-│   ├── features.py               # cleaning + feature engineering + pipeline builder (shared)
-│   └── schema.py                 # API input validation rules
+│   ├── features.py               # cleaning code (shared with the api)
+│   └── schema.py                 # checks if input is good
 ├── model/
-│   ├── churn_model.pkl           # saved full pipeline (preprocessing + tree)
-│   └── model_metadata.json       # parameters, test metrics, library versions
+│   ├── churn_model.pkl           # the saved model
+│   └── model_metadata.json       # some info about the model
 ├── tests/
-│   └── test_api.py               # 19 automated API tests
-├── app.py                        # Flask REST API
-├── requirements.txt
+│   └── test_api.py               # tests to make sure I didn't break things
+├── app.py                        # the Flask app
+├── requirements.txt              # stuff you need to install
 ├── README.md
 ├── sample_request.json
 └── sample_response.json
 ```
 
-`src/features.py` is imported by **both** the notebook and the API. The saved pipeline references its `CleanAndEngineer` class, so the API must be able to import `src` (it does this automatically when started from anywhere).
+## How to setup
 
-## Setup
-
-Requires **Python 3.11 or newer** (built and tested on 3.12).
+You need **Python 3.11+**.
 
 ```bash
-cd customer_churn_project
 python -m venv .venv
 
 # macOS / Linux
 source .venv/bin/activate
-# Windows (PowerShell)
+# Windows
 .venv\Scripts\Activate.ps1
 
 pip install -r requirements.txt
 ```
 
-> The pinned versions are the ones the shipped model was trained with. If `pip` cannot install them (for example on an older Python), relax the pins and simply re-run the notebook: it retrains and overwrites `model/churn_model.pkl`, so model and libraries always match.
+*Note: if the install fails, you can just remove the versions from requirements.txt and re-run the notebook to make a new model.*
 
-## Run the notebook
+## Running things
 
+### The Notebook
 ```bash
 jupyter notebook notebook/churn_analysis.ipynb
 ```
+Just hit **Restart & Run All**. It takes about a minute and recreates everything.
 
-Use **Kernel → Restart & Run All**. It takes about a minute, reproduces every table and chart, and (re)writes `model/churn_model.pkl`, `model/model_metadata.json` and `sample_request.json`. It works whether Jupyter is started from the project root or from `notebook/`.
-
-## Run the API
-
+### The API
 ```bash
 python app.py
 ```
+It runs on `http://127.0.0.1:5000`.
 
-The server listens on `http://127.0.0.1:5000`. Optional environment variables: `PORT`, `HOST`, `MODEL_PATH`.
-
-| Endpoint | Purpose |
+| Endpoint | What it does |
 |---|---|
-| `POST /predict` | Score one customer (JSON in, prediction + probability out) |
-| `GET /health` | Liveness check plus model info |
+| `POST /predict` | Send customer data, get back if they'll churn |
+| `GET /health` | Check if its alive |
 
-### Sample request and response
-
-**Request** (`sample_request.json`)
-
+### Example request
+Send this to `/predict`:
 ```json
 {
   "gender": "Female", "SeniorCitizen": 0, "Partner": "No", "Dependents": "No", "tenure": 2,
@@ -98,8 +89,7 @@ The server listens on `http://127.0.0.1:5000`. Optional environment variables: `
 }
 ```
 
-**Response** (`200 OK`, `sample_response.json`)
-
+And you get this:
 ```json
 {
   "prediction": "Yes",
@@ -107,83 +97,29 @@ The server listens on `http://127.0.0.1:5000`. Optional environment variables: `
 }
 ```
 
-### Ways to call it
-
+You can test it with `curl`:
 ```bash
-# macOS / Linux / Git Bash
 curl -X POST http://127.0.0.1:5000/predict -H "Content-Type: application/json" -d @sample_request.json
 ```
 
-```powershell
-# Windows PowerShell
-Invoke-RestMethod -Uri http://127.0.0.1:5000/predict -Method Post -ContentType "application/json" -InFile sample_request.json
-```
+## Validation (making sure input is okay)
 
-```python
-# Python (pip install requests)
-import json, requests
-r = requests.post("http://127.0.0.1:5000/predict", json=json.load(open("sample_request.json")))
-print(r.status_code, r.json())
-```
+The API checks all 19 fields. If you send something wrong (like a negative tenure), it'll give you a `400` error with a message telling you what's wrong. 
 
-### Input fields
-
-All 19 fields are required, using the values from the data dictionary:
-
-| Field | Allowed values |
-|---|---|
-| `gender` | Female, Male |
-| `SeniorCitizen` | 0 or 1 |
-| `Partner`, `Dependents`, `PhoneService`, `PaperlessBilling` | Yes, No |
-| `tenure` | whole number of months, 0-120 |
-| `MultipleLines` | Yes, No, No phone service |
-| `InternetService` | DSL, Fiber optic, No |
-| `OnlineSecurity`, `OnlineBackup`, `DeviceProtection`, `TechSupport`, `StreamingTV`, `StreamingMovies` | Yes, No, No internet service |
-| `Contract` | Month-to-month, One year, Two year |
-| `PaymentMethod` | Electronic check, Mailed check, Bank transfer (automatic), Credit card (automatic) |
-| `MonthlyCharges` | number, 0-1000 |
-| `TotalCharges` | number or numeric string. May be blank or omitted **only** when `tenure` is 0 (customer not yet billed) |
-| `customerID` | optional string/integer; echoed back in the response, never used by the model |
-
-### Handling invalid input
-
-Bad input never reaches the model and never produces a stack trace. The API returns **HTTP 400** with every problem it found:
-
-```json
-{
-  "error": "Invalid input",
-  "details": [
-    {"field": "Contract", "message": "Invalid value 'Three year'. Allowed: ['Month-to-month', 'One year', 'Two year']"},
-    {"field": "tenure", "message": "Must be between 0 and 120 months."}
-  ]
-}
-```
-
-What is checked: body is a JSON object; no unknown fields; all required fields present; correct types (booleans, `NaN` and `Infinity` rejected); allowed categories; numeric ranges; and cross-field consistency (e.g. `PhoneService = "No"` requires `MultipleLines = "No phone service"`). Wrong method → `405`, unknown URL → `404`, oversized body → `413`; all answers are JSON.
-
-## Run the tests
-
+## Tests
+I wrote 19 tests to make sure everything works.
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-19 tests cover valid requests, risk ordering (a high-risk customer must score above a low-risk one), every validation rule, malformed bodies and the JSON error handlers.
+## Why I did it this way
 
-## Key design decisions
+- **Used a Pipeline:** This makes sure the cleaning code in the API is exactly teh same as in the notebook.
+- **TotalCharges blanks:** Fixed the 11 missing values by setting them to 0 (they were just new customers).
+- **Balanced weights:** Used this to make teh model better at finding people who leave.
+- **Simple model:** I picked a simpler tree because it worked almost as well as the complicated ones but is easier to explain.
 
-| Decision | Reason |
-|---|---|
-| Split 70:30 (`random_state=42`, stratified) **before** any analysis | Prevents leakage; keeps the 26.5% churn rate in both parts |
-| One sklearn `Pipeline` saved as a single file | API contains no preprocessing code, so training and serving cannot drift apart |
-| `TotalCharges` blank → 0 | The 11 blanks are all brand-new customers (tenure 0) who have not been billed; a constant fill cannot leak information |
-| Keep the 22 same-profile rows | They are different customers (different IDs); their churn labels agree |
-| `class_weight="balanced"` | Lifts recall from ~0.50 to ~0.80 on the churn class, the business priority |
-| Models compared with 5-fold CV on the training set; final choice by CV F1 | Test set touched once, at the end |
-| Shallowest tree among near-ties | Grid results differ by <0.002 F1 (noise is ~0.02), so the simpler tree wins |
-
-## Limitations
-
-- `churn_probability` is a **risk score for ranking customers**, not a calibrated probability. With balanced class weights the average score on the test set (0.41) sits above the true churn rate (0.27).
-- The four engineered features do not measurably improve a decision tree (differences are within noise); they are kept for interpretability. See section 4 of the notebook.
-- Customers with `tenure = 0` were never observed to churn (only 11 exist), so predictions for them are extrapolations.
-- The results describe associations in one historical snapshot, not causes. Retention offers should be validated with an A/B test, and the model retrained periodically.
+## Some things to know
+- The probability isn't perfect, it's more for ranking who's most likely to leave.
+- Brand new customers (tenure 0) are hard to predict since there weren't many in the data.
+- This is just based on old data, it doesn't mean these things *cause* people to leave.
