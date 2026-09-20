@@ -1,5 +1,7 @@
 # Customer Churn Predictin (IBM Telco)
 
+[![GitHub](https://img.shields.io/badge/GitHub-Repo-blue?logo=github)](https://github.com/abhi411/DS)
+
 This is a proJect I made to predict if telecom customers are gonna leave (churn). I used a **Decision Tree** model and put it inside a **Flask API** so it's easy to use.
 
 **What I did:** Basically looked at the data, did some cleaning, picked a modle, and made sure it works with a simple web server.
