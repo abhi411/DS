@@ -1,0 +1,15 @@
+# Versions used to train and save model/churn_model.pkl (Python 3.12).
+# A pickled scikit-learn model should be loaded with the same scikit-learn version
+# it was saved with. If you need different versions, install them and re-run the
+# notebook ("Run All") to regenerate model/churn_model.pkl.
+pandas==2.2.0
+numpy==1.26.4
+scikit-learn==1.5.0
+matplotlib==3.8.0
+seaborn==0.13.1
+joblib==1.4.2
+flask==3.0.0
+
+# Only needed to open and run the notebook
+notebook
+ipykernel

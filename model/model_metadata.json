@@ -1,0 +1,25 @@
+{
+  "model": "DecisionTreeClassifier inside sklearn Pipeline (CleanAndEngineer -> OneHotEncoder -> tree)",
+  "parameters": {
+    "class_weight": "balanced",
+    "criterion": "gini",
+    "max_depth": 5,
+    "min_samples_leaf": 100
+  },
+  "positive_class": "Churn = Yes",
+  "decision_threshold": 0.5,
+  "trained_on_rows": 4930,
+  "test_metrics": {
+    "Accuracy": 0.7108,
+    "Precision": 0.4743,
+    "Recall": 0.8217,
+    "F1 score": 0.6014,
+    "ROC-AUC": 0.8324
+  },
+  "library_versions": {
+    "scikit-learn": "1.8.0",
+    "pandas": "3.0.2",
+    "numpy": "2.4.4",
+    "joblib": "1.5.3"
+  }
+}
